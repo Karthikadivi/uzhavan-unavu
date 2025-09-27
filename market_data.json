@@ -1,0 +1,43 @@
+{
+  "markets": [
+    {
+      "name": "Mattuthavani Flower Market, Madurai",
+      "product": "Jasmine (Madurai Malli)",
+      "price_per_kg": 210,
+      "demand": "High",
+      "notes": "Payment is immediate but prices can fluctuate."
+    },
+    {
+      "name": "Gandhi Market, Trichy",
+      "product": "Jasmine (Madurai Malli)",
+      "price_per_kg": 265,
+      "demand": "Medium",
+      "notes": "Slightly higher demand for premium quality flowers."
+    },
+    {
+      "name": "Kovai Flower Market, Coimbatore",
+      "product": "Jasmine (Madurai Malli)",
+      "price_per_kg": 320,
+      "demand": "High",
+      "notes": "High demand from perfume and export companies. Payment might be delayed by a day."
+    }
+  ],
+  "logistics": [
+    {
+      "partner": "Madurai Local Transports",
+      "from": "Madurai",
+      "to": "Trichy",
+      "cost_per_kg": 25,
+      "capacity_available_kg": 200,
+      "contact": "9876543210"
+    },
+    {
+      "partner": "Kovai Express Logistics",
+      "from": "Madurai",
+      "to": "Coimbatore",
+      "cost_per_kg": 40,
+      "capacity_available_kg": 75,
+      "contact": "9123456780"
+    }
+  ]
+}
