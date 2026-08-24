@@ -1,0 +1,36 @@
+# Environment
+.env
+.env.local
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data
+data/settlements.json
+data/price_cache.json
+
+# Evaluation outputs
+evaluation/results/*.csv
+evaluation/results/*.png
+
+# OS
+.DS_Store
+Thumbs.db
