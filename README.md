@@ -226,15 +226,91 @@ Run `python -m evaluation.backtest` to generate fresh metrics with your API keys
 
 ---
 
+## 💰 The Money Action — Bounded & Gated
+
+This is a **Razorpay Buildathon** submission. The money action is a **booking deposit order** using `razorpay.order.create()`:
+
+```python
+MAX_DEPOSIT = 5000  # Hard cap — order can never exceed ₹5,000
+
+def create_booking_order(amount_rupees, market_name, commodity, quantity_kg):
+    # BOUNDED: cap the money action so it can never exceed a safe limit
+    amount_rupees = min(amount_rupees, MAX_DEPOSIT)
+    order = rz_client.order.create({
+        "amount": int(amount_rupees * 100),   # paise
+        "currency": "INR",
+        "receipt": f"uzhavan_{market_name[:10]}_{timestamp}",
+        "notes": {"market": market_name, "purpose": "produce_booking_deposit"}
+    })
+    log_audit("order_created", order)  # Every order is audit-logged
+    return order
+```
+
+**Safety properties:**
+- ✅ Hard-capped at ₹5,000 — cannot exceed regardless of input
+- ✅ Test-mode only — no real money processed
+- ✅ Every order logged to persistent `audit_log.jsonl`
+- ✅ Graceful failure — if Razorpay API errors, user sees clean message, no money moved
+
+---
+
+## 📋 Audit Trail Sample
+
+Every recommendation and every payment order is logged to `audit_log.jsonl` (append-only):
+
+```jsonl
+{"timestamp": "2026-08-24T15:30:12", "event": "recommendation", "details": {"query": "50kg jasmine Madurai", "best_market": "Koyambedu Chennai", "net_profit": 17775.00, "confidence": "high", "markets_analyzed": 6}}
+{"timestamp": "2026-08-24T15:30:45", "event": "order_created", "details": {"order_id": "order_test_abc123", "amount_inr": 3555.00, "market": "Koyambedu Chennai", "bounded_max": 5000}}
+{"timestamp": "2026-08-24T15:31:02", "event": "order_failed", "details": {"error": "BadRequestError: invalid contact", "market": "Koyambedu Chennai"}}
+```
+
+The agent's in-app Decision Log also shows every tool call with inputs, outputs, timing, and status (✅/⚠️/❌).
+
+---
+
+## 🛡️ Failure Handling Matrix
+
+| Scenario | Agent Response | User Experience |
+|----------|---------------|-----------------|
+| data.gov.in API down | Falls back to cached prices | ⚠️ "Using cached data" warning |
+| Unknown/misspelled crop | Asks user to clarify | "Please specify the crop name" |
+| Transport capacity exceeded | Recommends local sale | "Transport limited to Xkg" |
+| Razorpay not configured | Payment tab disabled | "Add API keys to enable payments" |
+| Razorpay order fails | Logs error, shows clean message | "No money was moved. Please retry." |
+| Ambiguous query (no quantity) | Parses what it can | Asks for missing info |
+| Gemini API rate limit | Retries with backoff | Brief delay, then response |
+| All markets same price | Recommends local | "Save on transport costs" |
+
+```python
+# CORRECTION 4 — Every failure is caught and explained cleanly
+try:
+    order = create_booking_order(deposit, best_market)
+    log_audit("order_created", order)
+    st.success(f"Test-mode booking order created: {order['id']}")
+except razorpay.errors.BadRequestError as e:
+    log_audit("order_failed", {"error": str(e)})
+    st.error("Payment order could not be created. Please retry. (No money was moved.)")
+```
+
+---
+
 ## 🏗️ Design Decisions
 
 1. **Why Decimal, not float?** Financial calculations need exact arithmetic. `0.1 + 0.2 ≠ 0.3` in float. We use `Decimal` everywhere money is involved.
 
 2. **Why constrain the LLM?** LLMs hallucinate numbers. Our system prompt explicitly says "never perform arithmetic." The LLM receives a pre-computed profit table and only generates natural language explanations.
 
-3. **Why Razorpay integration?** This is a Razorpay buildathon. Even in the Open track, showing payments-domain competence (payment links, webhooks, settlement tracking) signals direct relevance.
+3. **Why `order.create()` with a cap?** Razorpay wants "bounded money actions." Our `MAX_DEPOSIT = 5000` means the system can never create an order exceeding ₹5,000 regardless of input — this is the safety gate.
 
-4. **Why 55 test scenarios, not 5?** The buildathon specifically says "a held-out test set / 50+ record batch — not one cherry-picked example." We built exactly what they asked for.
+4. **Why 55 test scenarios?** The buildathon says "a held-out test set / 50+ record batch — not one cherry-picked example." We built exactly what they asked for.
+
+---
+
+## 🎥 5-Minute Pitch Video
+
+**[Watch the demo →](YOUR_VIDEO_LINK_HERE)**
+
+Video structure: Problem (45s) → Live demo incl. Razorpay payment (2 min) → Architecture (1 min) → Bounded money logic + audit trail (1 min) → Impact (15s)
 
 ---
 
@@ -248,4 +324,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 **Karthikadivi** — [GitHub](https://github.com/Karthikadivi)
 
-Built with ❤️ for Tamil Nadu farmers and the Razorpay AI Buildathon 2026.
+Submission for **Razorpay AI Buildathon 2026** — Open Track
+
+Built with ❤️ for Tamil Nadu farmers.
